@@ -1,27 +1,47 @@
-#include <etherShield.h>
-#include <ETHER_28J60.h>
+#include <SPI.h>
+#include <UIPEthernet.h>
 
-static uint8_t mac[6] = {0x54, 0x55, 0x58, 0x10, 0x00, 0x24};  
-static uint8_t ip[4] = {192, 168, 3, 55}; 
-static uint16_t port = 80;
-int lampada = 3; 
+byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }; 
+byte ip[] = { 192, 168, 15, 175 }; 
+EthernetServer server(80); 
 
-ETHER_28J60 client;
+int ledPin = 4; 
 
-void setup() {
-client.setup(mac, ip, port);
-pinMode(lampada, OUTPUT);
-digitalWrite(lampada, LOW);
-}
+String readString = String(30); 
+int status = 0; 
 
-void loop() {
-  char* params;
-  if (params = client.serviceRequest()) {    
-         
-    if (strcmp(params, "?lampada") == 0) {
-      digitalWrite(lampada, !digitalRead(lampada));
-    }
- 
-    client.respond();
+void setup(){
+  Ethernet.begin(mac, ip); 
+  server.begin(); 
+  pinMode(ledPin, OUTPUT); 
+  digitalWrite(ledPin, LOW); 
   }
+
+void loop(){
+    EthernetClient client = server.available();
+    if(client){
+        while(client.connected()){
+            if(client.available()){
+                char c = client.read();
+                if(readString.length() < 100){
+                    readString += c;
+                }
+
+                if(c == '\n'){
+                    if(readString.indexOf("?")<0){
+
+                    }else{
+                        if(readString.indexOf("ledParam=1")>0){
+                            digitalWrite(ledPin,HIGH);
+                        } else{
+                            digitalWrite(ledPin, LOW);
+                        }
+                         client.println("HTTP/1.1 200 OK");                       
+                    }
+                    readString="";
+                    client.stop();
+                }
+            }
+        }
+    }
 }
