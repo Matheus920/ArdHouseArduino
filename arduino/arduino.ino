@@ -27,18 +27,14 @@ void loop(){
                 }
 
                 if(c == '\n'){//se encontrar o '\n' eh o final da requisição
-                    if(readString.indexOf("?")<0){ //verifica se existe o caractere '?'
-
-                    }else{
-                        if(readString.indexOf("ledParam=1")>0){ //se existir a string "ledParam=1" liga o led
-                            digitalWrite(ledPin,HIGH);
-                        } else{
-                            digitalWrite(ledPin, LOW);
+                     if(readString.indexOf("?")>0){ //verifica se existe o caractere '?'
+                        if(readString.indexOf("ledParam")>0){ // verifica se a requisição foi para o LED
+                              digitalWrite(ledPin, !digitalRead(ledPin)); // muda o estado do LED
+                              client.println("HTTP/1.1 200 OK"); //retorna um OK                   
                         }
-                         client.println("HTTP/1.1 200 OK"); //retorna um OK                   
-                    }
                     readString=""; //limpa a string para novas requisições
                     client.stop(); // desliga o cliente
+                    }
                 }
             }
         }
