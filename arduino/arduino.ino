@@ -1,12 +1,22 @@
-#include <SPI.h>
+#include <DHT.h>
+#include <DHT_U.h>
 #include <UIPEthernet.h>
+#include <SPI.h>
+
+
+
+int ledPin = 4; 
+int dhtPin=A0;
+bool ledStatus = 0;
+int ventPin=6;
 
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }; //definiçcoes de endereço
 byte ip[] = { 192, 168, 15, 175 }; 
 EthernetServer server(80); 
 
-int ledPin = 4; 
-bool ledStatus = 0;
+DHT dht(dhtPin,DHT11);
+
+
 
 String readString = String(30); //declaração da string que armazena o http
 
@@ -15,6 +25,7 @@ void setup(){
   server.begin(); //inicia o servidor
   pinMode(ledPin, OUTPUT); 
   digitalWrite(ledPin, LOW); 
+  dht.begin();
   }
 
 void loop(){
@@ -36,10 +47,14 @@ void loop(){
                         }else if(readString.indexOf("ledStatus")>=0){ // verifica se a requisição foi para checar o status do LED
                          // client.println("<h1>");
                           client.println(digitalRead(ledPin));
-                        // client.println("</h1>");
+                         //client.println("</h1>");
+                        }else if(readString.indexOf("tempUmi")>=0){
+                            client.println(dht.readTemperature());
+                            client.println(dht.readHumidity());
+                        }else if(readString.indexOf("vent=")>=0){
+                          analogWrite(ventPin,processaString(readString));
                         }
                     }
-
                     client.println("HTTP/1.1 200 OK"); //retorna um OK
                     readString=""; //limpa a string para novas requisições
                     client.stop(); // desliga o cliente
@@ -47,4 +62,28 @@ void loop(){
             }
         }
     }
+}
+
+
+int processaString(String http){
+  
+String aux="";
+bool finish=false;
+bool found=false;
+  
+  for(int i=0; i<http.length(); i++){
+    char c = http[i];
+                if(found && (c==' '||c=='\n')){
+                  return aux.toInt();
+                }
+                
+                if(found){
+                    aux += c;
+                }
+
+                if(c=='='){
+                  found=true;
+                }
+  }
+  return aux.toInt();
 }
